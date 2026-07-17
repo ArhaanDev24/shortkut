@@ -18,4 +18,17 @@ mac:
   # account exists. Unsigned builds still work locally (right-click → Open).
 dmg:
   title: ShortKut
+win:
+  icon: resources/icon.png
+  target:
+    - target: nsis
+      arch:
+        - x64
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+# Windows builds cross-compile from macOS via Wine (brew install --cask wine-stable),
+# or natively on a Windows runner. Unsigned .exe triggers a SmartScreen warning until
+# an EV/OV code-signing cert is configured (CSC_LINK + CSC_KEY_PASSWORD).
 npmRebuild: false
