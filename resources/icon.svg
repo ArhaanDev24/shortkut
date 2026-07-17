@@ -1,0 +1,25 @@
+<svg width="512" height="512" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <filter id="rough" x="-25%" y="-25%" width="150%" height="150%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="3" seed="7" result="warp"/>
+      <feDisplacementMap in="SourceGraphic" in2="warp" scale="7"/>
+    </filter>
+    <filter id="grain" x="-25%" y="-25%" width="150%" height="150%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="3" result="noise"/>
+      <feColorMatrix in="noise" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.55 0.55" result="noiseAlpha"/>
+      <feComposite in="SourceGraphic" in2="noiseAlpha" operator="in"/>
+    </filter>
+  </defs>
+  <g filter="url(#grain)">
+    <g filter="url(#rough)" stroke="#7444c8" fill="none" stroke-linecap="round">
+      <circle cx="60" cy="60" r="38" fill="#7444c8" stroke="none" opacity="0.92"/>
+      <ellipse cx="60" cy="60" rx="40" ry="36" stroke-width="7" opacity="0.85" transform="rotate(18 60 60)"/>
+      <ellipse cx="59" cy="61" rx="37" ry="41" stroke-width="6.5" opacity="0.8" transform="rotate(-24 60 60)"/>
+      <ellipse cx="61" cy="59" rx="42" ry="38" stroke-width="6" opacity="0.65" transform="rotate(55 60 60)"/>
+      <ellipse cx="60" cy="60" rx="30" ry="27" stroke-width="8" opacity="0.8" transform="rotate(-40 60 60)"/>
+      <ellipse cx="58" cy="61" rx="22" ry="25" stroke-width="9" opacity="0.75" transform="rotate(30 60 60)"/>
+      <ellipse cx="61" cy="58" rx="16" ry="13" stroke-width="10" opacity="0.7" transform="rotate(-15 60 60)"/>
+    </g>
+  </g>
+  <text x="60" y="65" text-anchor="middle" font-size="14" font-weight="700" font-family="'Chalkboard SE','Comic Sans MS','Marker Felt',cursive" fill="#f6f2e9" letter-spacing="0.5">ShortKut</text>
+</svg>

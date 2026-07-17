@@ -1,0 +1,40 @@
+{
+  "name": "shortkut",
+  "version": "0.1.0",
+  "description": "Local-first AI agent for your desktop. Bring your own API key or run local models — everything stays on your machine.",
+  "main": "./out/main/index.js",
+  "author": "Arhaan Khan",
+  "license": "MIT",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "preview": "electron-vite preview",
+    "typecheck": "tsc --noEmit",
+    "dist": "electron-vite build && electron-builder --mac"
+  },
+  "dependencies": {
+    "@ai-sdk/anthropic": "^2.0.0",
+    "@ai-sdk/google": "^2.0.0",
+    "@ai-sdk/mistral": "^2.0.0",
+    "@ai-sdk/openai": "^2.0.0",
+    "@ai-sdk/openai-compatible": "^1.0.0",
+    "ai": "^5.0.0",
+    "animejs": "^4.5.0",
+    "dompurify": "^3.2.0",
+    "marked": "^14.0.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.0",
+    "electron": "^33.0.0",
+    "electron-builder": "^26.15.3",
+    "electron-vite": "^3.0.0",
+    "typescript": "^5.6.0",
+    "vite": "^6.0.0"
+  }
+}
