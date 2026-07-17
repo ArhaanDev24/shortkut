@@ -75,6 +75,8 @@ export function recordUsage(provider: string, requests: number, tokens: number):
   bump(provider, (u) => {
     u.requests += requests
     u.tokens += tokens
+    // A successful request proves we're no longer rate-limited — clear the warning.
+    u.limitHitAt = undefined
   })
 }
 
@@ -92,9 +94,10 @@ export function recordLimitHit(provider: string): void {
   })
 }
 
-// How long a provider rejection keeps the warning up. Per-minute caps recover
-// fast; exhausted daily quotas re-trigger the flag on the next attempt anyway.
-const LIMIT_HIT_WINDOW_MS = 15 * 60 * 1000
+// How long a provider rejection keeps the warning up. Kept short so it clears on
+// its own quickly; a successful request clears it immediately (see recordUsage),
+// and if you're still capped the next attempt re-triggers it.
+const LIMIT_HIT_WINDOW_MS = 20 * 1000
 
 export function getTodayStats(): TodayStats {
   const usage = loadUsage()

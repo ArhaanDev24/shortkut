@@ -221,11 +221,13 @@ export default function App(): React.JSX.Element {
     void refreshSettings()
     void refreshChats()
     void refreshStats()
-    // Keep the "Today" card current even while idle — it visibly resets to zero
-    // at midnight and clears expired rate-limit warnings without a restart.
-    const t = setInterval(() => void refreshStats(), 60_000)
+    // Poll fast while a rate-limit warning is showing so it disappears promptly once
+    // it clears; otherwise a slow tick just keeps the "Today" card fresh and resets it
+    // at midnight.
+    const period = stats?.limitedProvider ? 3_000 : 60_000
+    const t = setInterval(() => void refreshStats(), period)
     return () => clearInterval(t)
-  }, [refreshSettings, refreshChats, refreshStats])
+  }, [refreshSettings, refreshChats, refreshStats, stats?.limitedProvider])
 
   useEffect(() => {
     return window.shortkut.onAgentEvent((eventChatId: string, event: AgentEvent) => {
