@@ -422,7 +422,7 @@ export function buildTools(ctx: ToolContext) {
 
     applescript: tool({
       description:
-        'Control the Mac by running an AppleScript: interact with apps, click menus, type text, read window contents. The user approves every script, so keep scripts small and explain the goal in `description`. Prefer app-native scripting (e.g. `tell application "Notes"`) over System Events keystrokes when possible.',
+        'Run an AppleScript to control apps, click menus, type, or read window contents. User approves each script — keep them small, set `description`. Prefer app-native scripting (tell application "Notes") over System Events keystrokes.',
       inputSchema: z.object({
         script: z.string().describe('The AppleScript source to run'),
         description: z.string().describe('One short sentence telling the user what this automation does')
@@ -442,10 +442,10 @@ export function buildTools(ctx: ToolContext) {
 
     send_whatsapp: tool({
       description:
-        'Send a WhatsApp message end-to-end in one reliable step: opens the chat via deep link with the text prefilled, focuses the message input, and presses send. Get the number with find_contact first. Afterwards take a screenshot to verify the sent bubble before telling the user.',
+        'Send a WhatsApp message in one reliable step (opens the chat, prefills text, sends). Get the number with find_contact first, then verify the sent bubble with read_screen.',
       inputSchema: z.object({
-        recipient_name: z.string().describe('The contact name the user referred to (e.g. "Mummy") — the number is verified against this name in Contacts before sending'),
-        phone: z.string().describe('Recipient phone: country code + digits, e.g. "917261879779" (symbols are stripped automatically)'),
+        recipient_name: z.string().describe('Contact name the user referred to (e.g. "Mummy") — verified against Contacts before sending'),
+        phone: z.string().describe('Country code + digits, e.g. "917261879779" (symbols stripped)'),
         message: z.string().describe('The message text to send')
       }),
       execute: async ({ recipient_name, phone, message }, { abortSignal }) => {
@@ -593,8 +593,7 @@ end tell`
     }),
 
     wait: tool({
-      description:
-        'Pause briefly (0.2–15 seconds) to let an app launch, a page load, or an animation finish before taking the next screenshot. Prefer 1–3 seconds.',
+      description: 'Pause (0.2–15s, prefer 1–3) to let an app launch or a page load before the next step.',
       inputSchema: z.object({
         seconds: z.number().describe('How long to wait, in seconds (max 15)')
       }),
@@ -622,7 +621,7 @@ end tell`
 
     open_url: tool({
       description:
-        'Open a URL or app deep link. IMPORTANT: without "app" the link opens in the system DEFAULT browser — when the user names a browser (Safari, Chrome, Arc…), you MUST pass it as app. Works for https:// pages and app schemes like "whatsapp://send?phone=+15551234567&text=hi", "facetime://+15551234567". Deep links and direct search URLs are far more reliable than clicking through UI — prefer them.',
+        'Open a URL or app deep link. Without "app" it uses the DEFAULT browser — when the user names a browser you MUST pass it as app. Handles https:// and schemes like "whatsapp://send?phone=+15551234567&text=hi". Prefer deep links / direct search URLs over clicking through UI.',
       inputSchema: z.object({
         url: z.string().describe('The URL or deep link to open'),
         app: z
@@ -659,7 +658,7 @@ end tell`
 
     screenshot: tool({
       description:
-        'SEE the screen: captures the main display as an image (needs a vision-capable model). Take one before clicking to find coordinates and after each action to verify. To READ SMALL TEXT (chat messages, fine print): take a full screenshot first, then call this again with region set to that area — the zoomed image is full sharpness. Coordinates for computer_click are pixels of the most recent screenshot, zoomed or not.',
+        'SEE the screen as an image (needs a vision model; expensive — prefer read_screen for text). Use to find click coordinates. For small text, call again with region set to that area to zoom. computer_click uses pixels of the most recent screenshot.',
       inputSchema: z.object({
         app: z
           .string()
@@ -849,21 +848,20 @@ out.join('\\n');`
           )
           // Coordinates are raw screen points; reset the click mapping to 1:1.
           lastShot = { originX: 0, originY: 0, scale: 1 }
-          const listEdge = Math.round(baseX + areaW * 0.33)
-          const convMid = Math.round(baseX + areaW * 0.66)
           const source = win
-            ? `Text from the ${app} window ONLY (other apps are excluded).`
+            ? `${app} window only`
             : app
-              ? `Could not isolate a "${app}" window — this is the whole screen, other apps' text may be mixed in.`
-              : 'Text from the whole screen.'
+              ? `whole screen (couldn't isolate "${app}"; other apps' text may be mixed in)`
+              : 'whole screen'
           const capturedAt = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+          // The messaging-specific guidance (timestamp pairing, chat-list edge) is only
+          // relevant when reading a messaging app — omit it everywhere else to save tokens.
+          const isMessaging = !!app && MESSAGING_APPS.some((a) => app.toLowerCase().includes(a))
+          const messagingNote = isMessaging
+            ? ` Chat rules: x below ${Math.round(baseX + areaW * 0.33)} is the chat LIST (other chats) — ignore it; in the conversation, x below ${Math.round(baseX + areaW * 0.66)} is the OTHER person, above is you. A message's time is the small text in its row or the row just below — quote exactly, and if none is near a message say so; never borrow a time.`
+            : ''
           return (
-            `${source} Captured just now at ${capturedAt}. ` +
-            `Each output line is one visual ROW of the screen, top to bottom, as: y=<row> (x) "text" (x) "text"… ` +
-            `To click an item use its (x) and the row's y with computer_click. ` +
-            `TIMESTAMPS: a message's time is the small time text in the SAME row or the row immediately below it — pair strictly by row, quote it exactly as printed, and if no time is visible near a message say so; never take a time from elsewhere. ` +
-            `In messaging apps the left side of the window (x below ${listEdge}) is the chat LIST — previews of OTHER chats; ignore it when reading the open conversation. ` +
-            `Within the conversation area, items with x below ${convMid} are the OTHER person's messages, above it are yours.\n` +
+            `${source}, captured ${capturedAt}. Lines are visual rows top-to-bottom: y=<row> (x) "text". Click via that (x) and y with computer_click.${messagingNote}\n` +
             lines.join('\n').slice(0, 7_000)
           )
         } catch (err: any) {
@@ -901,7 +899,7 @@ out.join('\\n');`
 
     computer_type: tool({
       description:
-        'Insert text into whatever field is focused on screen (via clipboard paste — reliable in every app, supports emoji and multiline text; newlines insert line breaks without sending). Click the target field first. Never type passwords or payment details — ask the user to enter those themselves.',
+        'Insert text into the focused field (via clipboard paste; supports emoji/multiline, newlines are line breaks not sends). Click the target field first. Never type passwords or payment details.',
       inputSchema: z.object({
         text: z.string().describe('The text to insert')
       }),

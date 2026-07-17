@@ -337,7 +337,7 @@
     <svg class="doodle d3" viewBox="0 0 40 40" fill="none" stroke="#7444c8" stroke-width="3" stroke-linecap="round"><path d="M20 20 m-3 0 a3 3 0 1 0 6 0 a6 6 0 1 0 -12 0 a9 9 0 1 0 18 0 a12 12 0 1 0 -24 0"/></svg>
     <svg class="doodle d4" viewBox="0 0 40 40" fill="none" stroke="#c8442f" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M6 30 C 12 8, 26 8, 32 20"/><path d="M32 20l-7-2M32 20l1-7"/></svg>
     <h1>Your AI coworker.<br /><span class="scribbled">Entirely on your desktop.<svg viewBox="0 0 300 20" preserveAspectRatio="none"><path d="M4 14 C60 6, 120 18, 170 10 S 260 14, 296 8" fill="none" stroke="#c8442f" stroke-width="4" stroke-linecap="round" opacity=".75"/></svg></span></h1>
-    <p class="hero-sub">Tell it "clean up my Downloads folder" — then watch it happen. No servers, no accounts, no subscriptions. Runs free with local models via Ollama, or bring your own API key.</p>
+    <p class="hero-sub">Tell it "clean up my Downloads folder" — then watch it happen. No servers, no accounts, no subscriptions. Runs free with local models via Ollama, or bring your own API key. Mac &amp; Windows.</p>
 
     <div class="laptop-zone">
       <div class="laptop">
@@ -377,11 +377,15 @@
     </div>
 
     <div class="downloads" id="downloads">
-      <a class="dl-btn" href="#" onclick="return false;">
+      <a class="dl-btn" href="https://github.com/ArhaanDev24/shortkut/releases/latest" target="_blank" rel="noopener">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M5 20h14"/></svg>
         <span>Download for macOS<small>Apple Silicon &amp; Intel · .dmg</small></span>
       </a>
-      <div class="dl-note">Free beta for macOS · your keys stay in your keychain · nothing phones home</div>
+      <a class="dl-btn win" href="https://github.com/ArhaanDev24/shortkut/releases/latest" target="_blank" rel="noopener">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M5 20h14"/></svg>
+        <span>Download for Windows<small>Windows 10+ · .exe</small></span>
+      </a>
+      <div class="dl-note">Free beta · your keys stay in your keychain · nothing phones home</div>
     </div>
   </div>
 </div>
@@ -525,7 +529,7 @@
     <h2>There is no ShortKut <em>server.</em></h2>
     <p class="lead" style="color:#b5aec6;">Nothing to sign up for, nothing to leak. The only network traffic is between your machine and the model provider you chose.</p>
     <div class="cards">
-      <div class="card"><h3>Keys stay locked</h3><p>API keys are encrypted by your Mac's Keychain and never leave the device.</p></div>
+      <div class="card"><h3>Keys stay locked</h3><p>API keys are encrypted by your OS — macOS Keychain or Windows Credential Manager — and never leave the device.</p></div>
       <div class="card"><h3>Chats are files</h3><p>Conversations live as local JSON on your disk. Delete a chat, it's gone.</p></div>
       <div class="card"><h3>Screens stay yours</h3><p>Screenshots are temporary, sent only to your chosen model, and scrubbed the moment a task finishes.</p></div>
     </div>
