@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ShortKut — 40-second demo</title>
+<style>
+  :root {
+    --bg: #f4f1ea;
+    --bg-raised: #fbf9f3;
+    --side: #ede9de;
+    --inset: #efeadf;
+    --border: #d8d1c2;
+    --ink: #38304a;
+    --text: #352e45;
+    --dim: #6c6577;
+    --accent: #7444c8;
+    --accent-soft: rgba(116, 68, 200, 0.12);
+    --rust: #c8442f;
+    --ok: #2e8b57;
+    --crayon: 'Chalkboard SE', 'Comic Sans MS', 'Marker Felt', cursive;
+    --wob: 18px 6px 20px 7px / 7px 20px 6px 18px;
+    --wob-sm: 12px 5px 13px 6px / 6px 13px 5px 12px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    background:
+      radial-gradient(1200px 700px at 50% -10%, #efe9f7, transparent),
+      var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    display: flex; align-items: center; justify-content: center;
+    min-height: 100%; overflow: hidden;
+  }
+  body::after {
+    content: ''; position: fixed; inset: 0; z-index: 60; pointer-events: none;
+    opacity: 0.06; mix-blend-mode: multiply;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  .stage {
+    position: relative; width: 960px; height: 600px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    transform: scale(min(1, calc(100vw / 1000)));
+  }
+
+  /* floating crayon doodles */
+  .doodle { position: absolute; opacity: 0.4; pointer-events: none; animation: drift 3s ease-in-out infinite alternate; }
+  .doodle.a { top: 40px; left: 70px; width: 46px; }
+  .doodle.b { top: 70px; right: 90px; width: 52px; animation-delay: -1s; }
+  .doodle.c { bottom: 70px; left: 120px; width: 40px; animation-delay: -1.7s; }
+  .doodle.d { bottom: 90px; right: 120px; width: 48px; animation-delay: -2.3s; }
+  @keyframes drift { from { transform: translateY(-8px) rotate(-7deg); } to { transform: translateY(8px) rotate(7deg); } }
+
+  /* ── app window ── */
+  .win {
+    position: relative; width: 720px; height: 460px;
+    background: var(--bg); border: 3px solid var(--ink);
+    border-radius: 20px; overflow: hidden;
+    box-shadow: 0 40px 90px rgba(56,48,74,.28);
+    display: flex; flex-direction: column;
+    opacity: 0; transform: translateY(26px) scale(.96);
+    transition: opacity .6s ease, transform .6s cubic-bezier(.34,1.4,.64,1);
+  }
+  .stage.live .win { opacity: 1; transform: none; }
+
+  /* working glow around the window */
+  .win::after {
+    content: ''; position: absolute; inset: 0; pointer-events: none; border-radius: 18px;
+    box-shadow: inset 0 0 46px 8px rgba(116,68,200,.0);
+    transition: box-shadow .4s ease;
+  }
+  .win.working::after {
+    box-shadow: inset 0 0 46px 9px rgba(116,68,200,.42);
+    animation: glowpulse 2s ease-in-out infinite;
+  }
+  @keyframes glowpulse { 50% { box-shadow: inset 0 0 46px 9px rgba(116,68,200,.24); } }
+
+  .titlebar { height: 40px; flex-shrink: 0; display: flex; align-items: center; gap: 8px; padding: 0 14px; background: var(--side); border-bottom: 2px solid var(--border); }
+  .dot { width: 11px; height: 11px; border-radius: 50%; }
+  .dot.r { background: #e0685c; } .dot.y { background: #e3b341; } .dot.g { background: #56b871; }
+  .titlebar .brand { margin-left: 8px; display: flex; align-items: center; gap: 7px; font-family: var(--crayon); font-weight: 700; color: var(--accent); font-size: 14px; }
+
+  .body { flex: 1; display: flex; min-height: 0; }
+  .side { width: 150px; flex-shrink: 0; background: var(--side); border-right: 2px solid var(--border); padding: 12px 10px; }
+  .side .newchat { font-family: var(--crayon); font-size: 12px; color: #f6f2e9; background: var(--accent); border: 2px solid var(--ink); border-radius: 9px 4px 10px 4px; padding: 6px 8px; text-align: center; margin-bottom: 10px; }
+  .side .item { font-family: var(--crayon); font-size: 11.5px; color: var(--dim); padding: 5px 7px; border-radius: 7px 3px 8px 3px; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .side .item.on { background: var(--accent-soft); border: 1.5px solid var(--accent); color: var(--text); }
+
+  .chat { flex: 1; display: flex; flex-direction: column; padding: 16px 18px; gap: 10px; min-height: 0; overflow: hidden; }
+  .msgs { flex: 1; display: flex; flex-direction: column; gap: 9px; overflow: hidden; }
+
+  .user { align-self: flex-end; max-width: 80%; background: var(--accent-soft); border: 1.5px solid var(--accent); border-radius: 12px 5px 13px 5px; padding: 7px 12px; font-size: 13.5px; color: var(--text); }
+  .user .cursor { display: inline-block; width: 1px; }
+
+  .chip { display: flex; align-items: center; gap: 8px; width: fit-content; max-width: 92%; background: var(--bg-raised); border: 1.5px solid var(--border); border-radius: 9px 4px 10px 4px; padding: 6px 11px; font-family: var(--crayon); font-size: 12.5px; color: var(--dim);
+    opacity: 0; transform: translateX(-10px); transition: opacity .25s ease, transform .25s ease; }
+  .chip.show { opacity: 1; transform: none; }
+  .chip .ic { width: 15px; height: 15px; flex-shrink: 0; color: var(--accent); }
+  .chip .tick { margin-left: 4px; color: var(--ok); opacity: 0; transition: opacity .2s ease; }
+  .chip.done .tick { opacity: 1; }
+  .chip .spin { width: 10px; height: 10px; border: 2px dashed var(--accent); border-radius: 50%; margin-left: 4px; animation: spin 1.1s linear infinite; }
+  .chip.done .spin { display: none; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .reply { max-width: 88%; font-size: 13.5px; color: var(--text); line-height: 1.5;
+    opacity: 0; transform: translateY(6px); transition: opacity .35s ease, transform .35s ease; }
+  .reply.show { opacity: 1; transform: none; }
+
+  /* mini now-playing card for the music scene */
+  .player { display: flex; align-items: center; gap: 10px; width: fit-content; background: #1e1b28; color: #efeafc; border-radius: 12px 5px 12px 5px; padding: 8px 12px; margin-top: 2px;
+    opacity: 0; transform: translateY(6px); transition: opacity .35s ease, transform .35s ease; }
+  .player.show { opacity: 1; transform: none; }
+  .player .cover { width: 30px; height: 30px; border-radius: 6px; background: linear-gradient(135deg, #7444c8, #c8442f); flex-shrink: 0; }
+  .player .meta { font-size: 11.5px; line-height: 1.3; }
+  .player .meta b { font-family: var(--crayon); }
+  .player .bar { width: 90px; height: 4px; background: rgba(255,255,255,.2); border-radius: 3px; overflow: hidden; margin-top: 4px; }
+  .player .bar i { display: block; height: 100%; width: 0; background: #b8a2f0; }
+  .player.show .bar i { animation: prog 6s linear forwards; }
+  @keyframes prog { to { width: 100%; } }
+
+  /* composer */
+  .composer { flex-shrink: 0; display: flex; gap: 8px; align-items: center; }
+  .composer .input { flex: 1; border: 2px solid var(--ink); border-radius: var(--wob); background: var(--bg-raised); padding: 8px 12px; font-family: var(--crayon); font-size: 12.5px; color: var(--dim); }
+  .composer .send { background: var(--accent); color: #f6f2e9; font-family: var(--crayon); font-weight: 700; font-size: 12.5px; border: 2px solid var(--ink); border-radius: var(--wob-sm); padding: 8px 14px; }
+
+  .working-line { display: flex; align-items: center; gap: 8px; font-family: var(--crayon); font-size: 12px; color: var(--accent); height: 16px; opacity: 0; transition: opacity .25s ease; }
+  .working-line.show { opacity: 1; }
+  .working-line .lg ellipse { stroke-dasharray: 100; animation: scrib 2.2s linear infinite; }
+  @keyframes scrib { from { stroke-dashoffset: 200; } to { stroke-dashoffset: 0; } }
+
+  /* crayon cursor that rides to the send button / results */
+  .cursor-crayon { position: absolute; width: 30px; z-index: 30; left: 0; top: 0; pointer-events: none;
+    filter: drop-shadow(0 2px 4px rgba(56,48,74,.35)); opacity: 0; transition: opacity .3s ease, transform .5s cubic-bezier(.4,0,.2,1); }
+  .stage.live .cursor-crayon { opacity: 1; }
+
+  /* ── intro & outro overlays ── */
+  .card { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 14px;
+    background: radial-gradient(700px 500px at 50% 40%, #efe9f7, var(--bg)); z-index: 20;
+    opacity: 0; pointer-events: none; transition: opacity .5s ease; }
+  .card.show { opacity: 1; }
+  .card h1 { font-family: var(--crayon); font-size: 42px; color: var(--ink); }
+  .card h1 em { color: var(--accent); font-style: normal; }
+  .card p { font-family: var(--crayon); font-size: 18px; color: var(--dim); max-width: 560px; }
+  .card .pills { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 6px; }
+  .card .pill { font-family: var(--crayon); font-size: 13px; border: 2px solid var(--ink); border-radius: var(--wob-sm); padding: 7px 14px; background: var(--bg-raised); }
+  .card .pill.free { background: var(--accent); color: #f6f2e9; }
+  .logo-big ellipse { stroke-dasharray: 100; stroke-dashoffset: 100; }
+  .card.show .logo-big ellipse { animation: draw 1.1s ease forwards; }
+  .logo-big ellipse:nth-of-type(2){animation-delay:.2s!important}
+  .logo-big ellipse:nth-of-type(3){animation-delay:.4s!important}
+  .logo-big ellipse:nth-of-type(4){animation-delay:.6s!important}
+  @keyframes draw { to { stroke-dashoffset: 0; } }
+
+  /* progress + replay */
+  .track { position: absolute; bottom: 26px; width: 720px; height: 6px; background: var(--border); border-radius: 4px; overflow: hidden; }
+  .track i { display: block; height: 100%; width: 0; background: var(--accent); }
+  .replay { position: absolute; bottom: 6px; font-family: var(--crayon); font-size: 12px; color: var(--dim); background: none; border: none; cursor: pointer; }
+  .replay:hover { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <svg class="doodle a" viewBox="0 0 40 40" fill="none" stroke="#c8442f" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 4 L24 16 L36 16 L26 23 L30 35 L20 27 L10 35 L14 23 L4 16 L16 16 Z"/></svg>
+  <svg class="doodle b" viewBox="0 0 40 40" fill="none" stroke="#7444c8" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 28 L12 12 L20 28 L28 12 L36 28"/></svg>
+  <svg class="doodle c" viewBox="0 0 40 40" fill="none" stroke="#7444c8" stroke-width="3" stroke-linecap="round"><path d="M20 20 m-3 0 a3 3 0 1 0 6 0 a6 6 0 1 0 -12 0 a9 9 0 1 0 18 0 a12 12 0 1 0 -24 0"/></svg>
+  <svg class="doodle d" viewBox="0 0 40 40" fill="none" stroke="#c8442f" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M6 30 C 12 8, 26 8, 32 20"/><path d="M32 20l-7-2M32 20l1-7"/></svg>
+
+  <div class="win" id="win">
+    <div class="titlebar">
+      <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+      <span class="brand">
+        <svg width="16" height="16" viewBox="0 0 120 120"><circle cx="60" cy="60" r="42" fill="#7444c8"/></svg>
+        ShortKut
+      </span>
+    </div>
+    <div class="body">
+      <div class="side">
+        <div class="newchat">+ New chat</div>
+        <div class="item on" id="sideTask">organize my downloads</div>
+        <div class="item">message Mummy</div>
+        <div class="item">play some music</div>
+        <div class="item">install an app</div>
+      </div>
+      <div class="chat">
+        <div class="msgs" id="msgs"></div>
+        <div class="working-line" id="workline">
+          <svg class="lg" width="16" height="16" viewBox="0 0 120 120"><g fill="none" stroke="#7444c8" stroke-linecap="round"><ellipse cx="60" cy="60" rx="40" ry="36" stroke-width="10" transform="rotate(18 60 60)" pathLength="100"/><ellipse cx="59" cy="61" rx="32" ry="38" stroke-width="9" transform="rotate(-24 60 60)" pathLength="100"/></g></svg>
+          <span id="worktext">Working…</span>
+        </div>
+        <div class="composer">
+          <div class="input" id="composerText">Ask ShortKut to do something…</div>
+          <div class="send" id="sendBtn">Send</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <svg class="cursor-crayon" id="crayon" viewBox="0 0 28 78"><g stroke="#38304a" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><rect x="6.5" y="16" width="15" height="46" rx="3.5" fill="#7444c8"/><rect x="5.5" y="27" width="17" height="24" rx="2" fill="#5d35a6"/><path d="M14 76 L7.5 61 Q14 57 20.5 61 Z" fill="#8a5fd6"/></g><path d="M10 21 v38" stroke="rgba(255,255,255,.35)" stroke-width="2.5" stroke-linecap="round"/></svg>
+
+  <!-- intro -->
+  <div class="card" id="intro">
+    <svg class="logo-big" width="120" height="120" viewBox="0 0 120 120"><g fill="none" stroke="#7444c8" stroke-linecap="round"><circle cx="60" cy="60" r="34" fill="#7444c8" opacity=".92"/><ellipse cx="60" cy="60" rx="42" ry="37" stroke-width="7" transform="rotate(18 60 60)" pathLength="100"/><ellipse cx="59" cy="61" rx="38" ry="43" stroke-width="6.5" transform="rotate(-24 60 60)" pathLength="100"/><ellipse cx="61" cy="59" rx="30" ry="27" stroke-width="8" transform="rotate(50 60 60)" pathLength="100"/><ellipse cx="60" cy="60" rx="20" ry="17" stroke-width="9" transform="rotate(-15 60 60)" pathLength="100"/></g></svg>
+    <h1>ShortKut</h1>
+    <p>Your AI coworker — <em style="color:#7444c8">entirely on your desktop.</em></p>
+  </div>
+
+  <!-- outro -->
+  <div class="card" id="outro">
+    <svg width="90" height="90" viewBox="0 0 120 120"><g fill="none" stroke="#7444c8" stroke-linecap="round"><circle cx="60" cy="60" r="34" fill="#7444c8" opacity=".92"/><ellipse cx="60" cy="60" rx="42" ry="37" stroke-width="7" transform="rotate(18 60 60)"/><ellipse cx="59" cy="61" rx="38" ry="43" stroke-width="6.5" transform="rotate(-24 60 60)"/></g></svg>
+    <h1>All on <em>your</em> machine.</h1>
+    <p>Your keys. Your models. No servers, no accounts. It just gets things done.</p>
+    <div class="pills">
+      <span class="pill free">Free with Ollama</span>
+      <span class="pill">Claude · GPT · Gemini · Mistral</span>
+      <span class="pill">Mac &amp; Windows</span>
+    </div>
+  </div>
+
+  <div class="track"><i id="prog"></i></div>
+  <button class="replay" id="replay">↻ replay</button>
+</div>
+
+<script>
+  const $ = (s) => document.querySelector(s);
+  const stage = $('#stage'), win = $('#win'), msgs = $('#msgs');
+  const composerText = $('#composerText'), workline = $('#workline'), worktext = $('#worktext');
+  const sideTask = $('#sideTask'), crayon = $('#crayon');
+  const IC = {
+    folder: '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7c0-1.1.9-2 2-2h4l2 2.5h8c1.1 0 2 .9 2 2V17c0 1.1-.9 2-2 2H5c-1.1 0-2-.9-2-2V7Z"/></svg>',
+    move: '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20"/></svg>',
+    user: '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c1-4 4.5-5.5 7-5.5s6 1.5 7 5.5"/></svg>',
+    send: '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4Z"/></svg>',
+    launch: '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3h7v7M21 3l-9 9M10 5H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5"/></svg>',
+    term: '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="15" rx="2"/><path d="M7 9l3.5 3L7 15M12.5 15H17"/></svg>',
+    eye: '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3"/></svg>',
+    music: '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>',
+  };
+
+  let timers = [];
+  const at = (ms, fn) => timers.push(setTimeout(fn, ms));
+  const clearAll = () => { timers.forEach(clearTimeout); timers = []; };
+
+  function typeInto(el, text, done) {
+    el.style.color = 'var(--text)'; el.textContent = '';
+    let i = 0;
+    const step = () => {
+      el.textContent = text.slice(0, i);
+      if (i++ <= text.length) at(24, step); else { done && done(); }
+    };
+    step();
+  }
+
+  function userBubble(text, cb) {
+    composerText.textContent = '';
+    const u = document.createElement('div'); u.className = 'user'; msgs.appendChild(u);
+    typeInto(u, text, () => at(250, cb));
+  }
+
+  function work(label) {
+    win.classList.add('working'); workline.classList.add('show'); worktext.textContent = label;
+  }
+  function stopWork() { win.classList.remove('working'); workline.classList.remove('show'); }
+
+  function chip(label, iconKey, offset, dur) {
+    at(offset, () => {
+      const c = document.createElement('div'); c.className = 'chip';
+      c.innerHTML = (IC[iconKey]||'') + '<span>'+label+'</span><span class="spin"></span><span class="tick">✓</span>';
+      msgs.appendChild(c);
+      requestAnimationFrame(() => c.classList.add('show'));
+      at(dur, () => c.classList.add('done'));
+    });
+  }
+
+  function reply(text, offset) {
+    at(offset, () => {
+      const r = document.createElement('div'); r.className = 'reply'; r.textContent = text; msgs.appendChild(r);
+      requestAnimationFrame(() => r.classList.add('show'));
+    });
+  }
+
+  function player(offset) {
+    at(offset, () => {
+      const p = document.createElement('div'); p.className = 'player';
+      p.innerHTML = '<div class="cover"></div><div class="meta"><b>Nights</b><br>Frank Ocean<div class="bar"><i></i></div></div>';
+      msgs.appendChild(p); requestAnimationFrame(() => p.classList.add('show'));
+    });
+  }
+
+  function clearMsgs() { msgs.innerHTML = ''; composerText.textContent = 'Ask ShortKut to do something…'; }
+
+  // one full task: types request, shows chips, reply. base = start time, returns nothing.
+  function scene(base, sideLabel, request, chips, replyText, extra) {
+    at(base, () => { clearMsgs(); sideTask.textContent = sideLabel; });
+    at(base + 300, () => userBubble(request, () => {
+      work(chips[0].working || 'Working…');
+    }));
+    let t = base + 1500;
+    chips.forEach((c) => { chip(c.label, c.icon, t, 900); t += 1100; });
+    at(t + 200, () => { stopWork(); });
+    reply(replyText, t + 400);
+    if (extra) extra(t + 400);
+  }
+
+  function run() {
+    clearAll(); clearMsgs();
+    stage.classList.remove('live'); $('#intro').classList.remove('show'); $('#outro').classList.remove('show');
+    $('#prog').style.transition = 'none'; $('#prog').style.width = '0';
+
+    // progress bar over 40s
+    at(30, () => { $('#prog').style.transition = 'width 40s linear'; $('#prog').style.width = '100%'; });
+
+    // 0–4s intro
+    $('#intro').classList.add('show');
+    at(3600, () => $('#intro').classList.remove('show'));
+    at(3900, () => stage.classList.add('live'));
+
+    // 4–11s  Files
+    scene(4200, 'organize my downloads',
+      'organize my Downloads folder by type',
+      [ {label:'Listed Downloads — 87 files', icon:'folder', working:'Listing files…'},
+        {label:'Created Images / Docs / Zips', icon:'folder', working:'Creating folders…'},
+        {label:'Moved 87 files into place', icon:'move', working:'Moving files…'} ],
+      'Done — 87 files sorted into 3 folders. Your Downloads is clean.');
+
+    // 11–18s  WhatsApp
+    scene(11200, 'message Mummy',
+      'tell Mummy on WhatsApp I’m on my way',
+      [ {label:'Looked up contact — Mummy', icon:'user', working:'Finding contact…'},
+        {label:'WhatsApp message to Mummy', icon:'send', working:'Sending…'} ],
+      'Sent “I’m on my way” to Mummy on WhatsApp. ✓✓');
+
+    // 18–25s  Music (with player)
+    scene(18400, 'play some music',
+      'play Nights by Frank Ocean',
+      [ {label:'Opened YouTube results', icon:'launch', working:'Searching…'},
+        {label:'Skipped the ad, played the song', icon:'music', working:'Starting playback…'} ],
+      'Now playing:',
+      (t) => player(t + 200));
+
+    // 25–31s  Install
+    scene(25600, 'install an app',
+      'install Spotify for me',
+      [ {label:'Ran brew install --cask spotify', icon:'term', working:'Installing…'},
+        {label:'Opened Spotify', icon:'launch', working:'Opening…'} ],
+      'Installed and opened Spotify — ready to go.');
+
+    // 31–36s  Sees the screen
+    scene(31400, 'read the screen',
+      'what did she reply?',
+      [ {label:'Read the WhatsApp window', icon:'eye', working:'Reading the screen…'} ],
+      'Mummy replied “Drive safe ❤️” at 4:12 PM.');
+
+    // move the crayon cursor around subtly through the run
+    const path = [[300,470],[560,300],[420,360],[600,250],[380,300],[560,330]];
+    path.forEach((p,i) => at(4200 + i*5200, () => { crayon.style.transform = 'translate('+p[0]+'px,'+p[1]+'px) rotate(38deg)'; }));
+
+    // 36–40s outro
+    at(36000, () => { stage.classList.remove('live'); $('#outro').classList.add('show'); });
+    at(40000, () => run()); // loop
+  }
+
+  $('#replay').addEventListener('click', run);
+  run();
+</script>
+</body>
+</html>
