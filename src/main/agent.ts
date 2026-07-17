@@ -147,6 +147,23 @@ function compactPreviousTurns(context: ModelMessage[]): void {
     compacted.push(m)
   }
   context.splice(0, lastUser, ...compacted)
+  coalesceAdjacentRoles(context)
+}
+
+/** Merge consecutive same-role text messages. Stripping a turn's tool messages can
+ * leave several assistant-text messages (or, for a turn that produced no reply, two
+ * user messages) adjacent — which providers like Anthropic/Gemini reject because they
+ * require alternating roles. Only string-content messages merge, so live tool-call /
+ * tool-result messages (array content) are never touched. */
+function coalesceAdjacentRoles(context: ModelMessage[]): void {
+  for (let i = context.length - 1; i > 0; i--) {
+    const cur = context[i]
+    const prev = context[i - 1]
+    if (cur.role === prev.role && typeof cur.content === 'string' && typeof prev.content === 'string') {
+      prev.content = `${prev.content}\n${cur.content}`
+      context.splice(i, 1)
+    }
+  }
 }
 
 /** Rough token estimate: ~4 chars per token, flat cost per image. */
